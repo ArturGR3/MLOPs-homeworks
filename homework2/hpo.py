@@ -18,8 +18,7 @@ def load_pickle(filename: str):
 
 
 @click.command()
-@click.option(
-    "--data_path",
+@click.option(    "--data_path",
     default="./output",
     help="Location where the processed NYC taxi trip data was saved"
 )
