@@ -14,7 +14,7 @@ from autogluon.tabular import TabularDataset, TabularPredictor
 from autogluon.core.metrics import make_scorer
 from kaggle_submition import kaggle_submition
 
-# what is the competition name?
+# Set competition name
 competition_name = "playground-series-s3e11"
 
 # Load data 
@@ -61,7 +61,7 @@ for preset in presets:
     with mlflow.start_run(run_name=f"{preset}") as parent_run:
         # Train AutoGluon with the preset
         predictor = TabularPredictor(label=target, path=f'AutoGloun_mlflow_{preset}', eval_metric=rmsle)
-        predictor.fit(train_data=train.drop(columns=['id']), time_limit=1*60, presets=preset, save_bag_folds=True)
+        predictor.fit(train_data=train.drop(columns=['id']), time_limit=15*60, presets=preset, save_bag_folds=True)
         
         # Predict on the test set for subission
         test_pred = predictor.predict(test)
