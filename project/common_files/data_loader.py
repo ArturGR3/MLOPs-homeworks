@@ -32,6 +32,24 @@ def adjust_dtypes(df: pd.DataFrame) -> pd.DataFrame:
 
     return df;
 
+# Create a function to download original file from the link provided (eg. https://www.kaggle.com/datasets/gauravduttakiit/media-campaign-cost-prediction)
+def download_original_data(original_data_set: str):
+    """
+    Download the original data from the link provided.
+    Parameters:
+        link (str): The link to the original data.
+    """
+    dataset_owner = original_data_set.split('/')[4]
+    dataset_name = original_data_set.split('/')[5]
+    file_name = 'train_dataset.csv'
+    api.dataset_download_file(f'{dataset_owner}/{dataset_name}', file_name, path='.')
+    # unzip the downloaded file
+    with zipfile.ZipFile(f"{file_name}.zip", "r") as zip_ref:
+        zip_ref.extractall(".")
+        # Load data into DataFrames
+        train = pd.read_csv("train_dataset.csv")
+    return train
+
 # Kaggle competition settings
 @click.command()
 @click.option(
@@ -40,10 +58,15 @@ def adjust_dtypes(df: pd.DataFrame) -> pd.DataFrame:
     help='Name of the Kaggle competition')
 @click.option(
     '--optimize_dtypes',
-    is_flag=True, 
+    type = bool,
+    # is_flag=True, 
     help='Whether to optimize DataFrame dtypes')
+@click.option(
+    '--original_data_set',
+    type = str, 
+    help='link to the original data')
 
-def load_data(competition_name: str, optimize_dtypes: bool): 
+def load_data(competition_name: str, optimize_dtypes: bool, original_data_set: str): 
     """
     Load data from a Kaggle competition zip file.
     Parameters:
@@ -63,11 +86,13 @@ def load_data(competition_name: str, optimize_dtypes: bool):
     submission = pd.read_csv("sample_submission.csv")
     test = pd.read_csv("test.csv")
     train = pd.read_csv("train.csv")
-
+    original = download_original_data(original_data_set)
+    
     if optimize_dtypes:
         train = adjust_dtypes(train)
         test = adjust_dtypes(test)
         submission = adjust_dtypes(submission)
+        original = adjust_dtypes(original)
 
     # Create a folder based on the competition name if it doesn't exist
     folder_name = competition_name.replace(" ", "_")
@@ -82,14 +107,15 @@ def load_data(competition_name: str, optimize_dtypes: bool):
     train.to_pickle(f"{folder_name}/data/train.pkl")
     test.to_pickle(f"{folder_name}/data/test.pkl")
     submission.to_pickle(f"{folder_name}/data/submission.pkl")
+    original.to_pickle(f"{folder_name}/data/original.pkl")
 
     # Remove the zip and csv files to safe space
     os.remove(f"{competition_name}.zip")
     os.remove("sample_submission.csv")
     os.remove("test.csv")
     os.remove("train.csv")
+    os.remove("train_dataset.csv")
 
-# Make the script executable
 if __name__ == "__main__":
     load_data()
 
