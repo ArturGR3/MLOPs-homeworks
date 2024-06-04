@@ -8,6 +8,22 @@ from sklearn.metrics import root_mean_squared_log_error
 from autogluon.tabular import TabularDataset, TabularPredictor
 from autogluon.core.metrics import make_scorer
 import matplotlib.pyplot as plt
+import subprocess
+import time as time 
+import sys 
+sys.path.insert(0, '/home/artur/MLOPs-homeworks/project')
+from common_files.data_loader import adjust_dtypes
+
+subprocess.call([
+    "python", 
+    "/home/artur/MLOPs-homeworks/project/common_files/data_loader.py", 
+    "--competition_name", 
+    "playground-series-s3e11", 
+    "--optimize_dtypes", 
+    "False", 
+    "--original_data_set", 
+    "https://www.kaggle.com/datasets/gauravduttakiit/media-campaign-cost-prediction"
+])
 
 competition_name = "playground-series-s3e11" # needs to be feed for automation 
 data_folder = f"/home/artur/MLOPs-homeworks/project/common_files/{competition_name}/data"
@@ -75,16 +91,13 @@ def openfe_fit(X_train, y_train):
         ofe (OpenFE): The fitted OpenFE object.
     """
     ofe = OpenFE()
-    with contextlib.redirect_stdout(None):
+    with contextlib.redirect_stdout(None): # suprese the output
         ofe.fit(data=X_train, label=y_train, n_jobs=4)  
-    topk = 10
+    topk = 5
     print(f'The top {topk} generated features are:')
     for feature in ofe.new_features_list[:topk]:
         print(tree_to_formula(feature))
     return ofe
-
-# Fit OpenFE on the training data
-ofe = openfe_fit(X_train_fe, y_train_fe)
 
 rmsle = make_scorer('rmsle', root_mean_squared_log_error, greater_is_better=False, needs_proba=False) # needs automation 
 
@@ -97,11 +110,17 @@ def get_AutoGluon_score(train, val, target, metric = rmsle, preset='medium_quali
     return -score[metric]
    
 # Understanding the impact of additional features 
+# X_train_ofe_adj = adjust_dtypes(X_train_fe, verbose=True, convert_float_to_int=True)
+# start_time = time.time()
+ofe = openfe_fit(X_train_fe, y_train_fe)
 scores = {}
-for topk in [0,5]:
+for topk in [0,10,20,30]:
     X_train_ofe, X_val_ofe = transform(combined_df, val_df, ofe.new_features_list[:topk], n_jobs=4)
-    scores[topk] = get_AutoGluon_score(X_train_ofe, X_val_ofe, target, metric = rmsle, preset='medium_quality', time_min=1)   
+    scores[topk] = get_AutoGluon_score(X_train_ofe, X_val_ofe, target, metric = rmsle, preset='medium_quality', time_min=4)   
     print(f'Top {topk} features score: {scores[topk]}')
+# end_time = time.time()
+# time_elapsed = end_time - start_time
+# print(f"Time elapsed: {time_elapsed}")
 # myltiply by -1 to get the RMSLE
 
 # Create a plot that shows improvements in score based on additional features, compared to the baseline
