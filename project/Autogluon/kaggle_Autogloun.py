@@ -16,9 +16,11 @@ from kaggle_submition import kaggle_submition
 
 # Set competition name
 competition_name = "playground-series-s3e11"
+run_time = 1
+presets = ['best_quality'] #, 'high_quality' , 'good_quality', 'medium_quality']
 
 # Load data 
-def load_data(competition_name)-> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
+def load_data(competition_name)-> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     Load data from the specified Kaggle competition.
 
@@ -31,8 +33,8 @@ def load_data(competition_name)-> (pd.DataFrame, pd.DataFrame, pd.DataFrame):
         submission (pandas.DataFrame): The submission data.
     """
     data_folder = f"/home/artur/MLOPs-homeworks/project/common_files/{competition_name}/data"
-    train = pd.read_pickle(filepath_or_buffer=f"{data_folder}/train.pkl")
-    test = pd.read_pickle(filepath_or_buffer=f"{data_folder}/test.pkl")
+    train = pd.read_pickle(filepath_or_buffer=f"{data_folder}/train_final.pkl")
+    test = pd.read_pickle(filepath_or_buffer=f"{data_folder}/test_final.pkl")
     submission = pd.read_pickle(filepath_or_buffer=f"{data_folder}/submission.pkl")
     return train, test, submission
 
@@ -45,7 +47,7 @@ train, test, submission = load_data(competition_name)
 target = 'cost'
 rmsle = make_scorer('rmsle', root_mean_squared_log_error, greater_is_better=False, needs_proba=False)
 # Define your presets
-presets = ['best_quality', 'high_quality' , 'good_quality', 'medium_quality']
+
 
 class AutogluonModel(mlflow.pyfunc.PythonModel):
 
@@ -61,7 +63,7 @@ for preset in presets:
     with mlflow.start_run(run_name=f"{preset}") as parent_run:
         # Train AutoGluon with the preset
         predictor = TabularPredictor(label=target, path=f'AutoGloun_mlflow_{preset}', eval_metric=rmsle)
-        predictor.fit(train_data=train.drop(columns=['id']), time_limit=15*60, presets=preset, save_bag_folds=True)
+        predictor.fit(train_data=train, time_limit=run_time*60, presets=preset, excluded_model_types=['KNN', 'NN'])
         
         # Predict on the test set for subission
         test_pred = predictor.predict(test)
