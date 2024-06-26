@@ -1,0 +1,6 @@
+[tool.pylint.messages_control]
+disable=[
+    "invalid-name", 
+    "redefined-outer-name", 
+    "line-too-long"
+]

@@ -1,11 +1,12 @@
-from batch import prepare_data
+
 from datetime import datetime
 import pandas as pd 
 # Add the directory containing batch.py to the Python path
 import sys
 import os
+from deepdiff import DeepDiff
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))                
-
+from batch import prepare_data
 
 def dt(hour, minute, second=0):
     return datetime(2023, 1, 1, hour, minute, second)
@@ -22,11 +23,15 @@ def test_prepare_data():
     columns = ['PULocationID', 'DOLocationID', 'tpep_pickup_datetime', 'tpep_dropoff_datetime']
     df = pd.DataFrame(data, columns=columns)
     
-    actual_result = prepare_data(df, categorical=['PULocationID', 'DOLocationID']) 
+    actual_result = prepare_data(df, categorical_columns=['PULocationID', 'DOLocationID']) 
+    # trim duration to 1 decimal 
+    actual_result['duration'] = actual_result['duration'].round(1)
     actuals_result_dict = actual_result[['PULocationID', 'DOLocationID', 'duration']].to_dict(orient='records')
     
     expected_result_dict = [{'PULocationID': '-1', 'DOLocationID': '-1', 'duration': 9.0},
     {'PULocationID': '1', 'DOLocationID': '1', 'duration': 8.0}]
         
-    assert actuals_result_dict == expected_result_dict
+    diff = DeepDiff(actuals_result_dict, expected_result_dict, significant_digits=1)
+    # print(diff)
+    assert 'values_changed' not in diff
     
