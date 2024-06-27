@@ -2,5 +2,16 @@
 disable=[
     "invalid-name", 
     "redefined-outer-name", 
-    "line-too-long"
+    "line-too-long",
+    "missing-function-docstring",
+    "missing-module-docstring",
+    "wrong-import-position"
 ]
+[tool.black]
+line-length = 95
+target-version = ['py38']
+skip-string-normalization = true
+
+[tool.isort]
+multi_line_output = 3
+length_sort = true
