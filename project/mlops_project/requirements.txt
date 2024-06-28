@@ -6,4 +6,6 @@ pandas
 pytest
 python-dotenv
 kaggle
+autogloun.tabular
+openfe
 -e .

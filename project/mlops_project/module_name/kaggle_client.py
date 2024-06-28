@@ -1,27 +1,26 @@
 import os
 import zipfile
 import numpy as np
-import pandas as pd
-from kaggle.api.kaggle_api_extended import KaggleApi
 import time
+import pandas as pd
 from dotenv import load_dotenv, find_dotenv
 
-# Load environment variables from .env file
+# Load environment variables from .env file before import KaggleAPI, so it does not fail
 load_dotenv(find_dotenv(usecwd=True))
+os.environ["KAGGLE_USERNAME"] = os.getenv("KAGGLE_USERNAME")
+os.environ["KAGGLE_KEY"] = os.getenv("KAGGLE_KEY")
+from kaggle.api.kaggle_api_extended import KaggleApi
+from kaggle.api_client import ApiClient
 
 
 class KaggleClient:
     def __init__(self):
 
-        os.environ["KAGGLE_USERNAME"] = os.getenv("KAGGLE_USERNAME")
-        os.environ["KAGGLE_KEY"] = os.getenv("KAGGLE_KEY")
-
-        self.api = KaggleApi()
+        self.api = KaggleApi(ApiClient())
         self.api.authenticate()
 
     def download_data(self, competition_name):
 
-        competition_name = "playground-series-s3e11"
         project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         data_path = os.path.join(project_root, f"data/{competition_name}/raw")
         os.makedirs(data_path, exist_ok=True)
