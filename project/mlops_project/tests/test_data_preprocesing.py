@@ -1,11 +1,13 @@
 import pytest
+import os
+import shutil
 import pandas as pd
 from module_name.data_preprocesing import DataPreprocessor
 
 
 @pytest.fixture
 def data_preprocessor():
-    return DataPreprocessor("competition_name")
+    return DataPreprocessor("intergration_test")
 
 
 def test_adjust_column_names(data_preprocessor):
@@ -67,7 +69,18 @@ def test_optimize_dtypes(data_preprocessor):
         }
     )
     optimized_df = data_preprocessor.optimize_dtypes(df, verbose=False)
+
     print(optimized_df.dtypes)
     assert optimized_df.dtypes["A"] == "int8"
     assert optimized_df.dtypes["B"] == "float32"
     assert optimized_df.dtypes["C"] == "category"
+
+
+def test_store_df(data_preprocessor):
+    df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
+    filename = "test_df.pkl"
+    data_preprocessor.store_df(df, filename)
+    stored_df = pd.read_pickle(f"{data_preprocessor.df_path}/{filename}")
+    assert df.equals(stored_df)
+    # remove directory data_preprocessor.df_path
+    shutil.rmtree(data_preprocessor.df_path)
