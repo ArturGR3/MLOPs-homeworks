@@ -31,9 +31,11 @@ class KaggleClient:
         os.remove(zip_file)
         print(f"Data downloaded and extracted to {data_path}")
 
-    def submit(self, submission_file, competition_name, message):
+    def submit(self, submission_file, competition_name, model_name, message):
         self.api.competition_submit(submission_file, message, competition_name)
-        print(f"Submission {submission_file} for {competition_name}: '{message}'")
+        print(
+            f"Submission {submission_file} for {competition_name} using {model_name}: '{message}'"
+        )
         polling_interval = 5
         max_wait_time = 60
         start_time = time.time()
