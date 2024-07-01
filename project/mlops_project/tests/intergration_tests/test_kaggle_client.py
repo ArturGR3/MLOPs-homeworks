@@ -1,12 +1,21 @@
 import os
-from module_name.kaggle_client import KaggleClient
+from dotenv import load_dotenv, find_dotenv
+import sys
+
+load_dotenv(find_dotenv(filename="mlops_project.env", usecwd=True, raise_error_if_not_found=True))
+project_path = os.getenv("PROJECT_PATH")
+print(f"project path {project_path}")
+if project_path not in sys.path:
+    sys.path.append(project_path)
+from modules.kaggle_client import KaggleClient
 
 
 def test_kaggle_integration():
     client = KaggleClient()
     competition_name = "playground-series-s3e11"
-    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    data_path = os.path.join(project_root, f"data/{competition_name}/raw")
+    model_name = "Autogluon_test"
+    message = "Integration Test Submission"
+    data_path = os.path.join(project_path, f"data/{competition_name}/raw")
 
     # Test download_data method
     client.download_data(competition_name)
@@ -14,6 +23,5 @@ def test_kaggle_integration():
 
     # Test submit method
     submission_file = f"{data_path}/sample_submission.csv"
-    message = "Integration Test Submission"
-    score = client.submit(submission_file, competition_name, message)
+    score = client.submit(submission_file, competition_name, model_name, message)
     assert score is not None

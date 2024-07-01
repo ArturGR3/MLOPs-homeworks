@@ -9,5 +9,7 @@ __pycache__/
 
 # Environments
 .env
+mlops_project.env
 .venv
 kaggle.json
+gcp_key.json

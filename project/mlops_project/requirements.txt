@@ -8,4 +8,8 @@ python-dotenv
 kaggle
 autogloun.tabular
 openfe
+mlflow 
+boto3 
+google-cloud-storage
+
 -e .

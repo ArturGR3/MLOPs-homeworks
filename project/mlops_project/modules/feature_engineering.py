@@ -1,4 +1,5 @@
 import os
+import re
 import pandas as pd
 from openfe import OpenFE, transform, tree_to_formula
 import contextlib
@@ -94,7 +95,7 @@ class FeatureEnginering:
 
         return ofe
 
-    def openfe_transform(self, data, number_of_features=5):
+    def openfe_transform(self, train, test, number_of_features=5):
         """
         Transform the data using OpenFE.
 
@@ -105,10 +106,13 @@ class FeatureEnginering:
         Returns:
         pd.DataFrame: The transformed data.
         """
-        ofe = self.openfe_fit(data, number_of_features)
+        ofe = self.openfe_fit(train, number_of_features)
+        # names = [tree_to_formula(f) for f in ofe.new_features_list[:number_of_features]]
+        # apply re.sub(r'\W+', '_', name) to each name with apply and lambda
         train_transformed, test_transformed = transform(
-            data, data, ofe.new_features_list[:number_of_features], n_jobs=4
+            train, test, ofe.new_features_list[:number_of_features], n_jobs=4
         )
+
         # save the transformed data
         train_transformed.to_pickle(os.path.join(self.feature_eng_data, "train_transformed.pkl"))
         test_transformed.to_pickle(os.path.join(self.feature_eng_data, "test_transformed.pkl"))
