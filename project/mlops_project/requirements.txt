@@ -3,6 +3,7 @@ flake8
 isort
 pip
 pandas
+psycopg2-binary
 pytest
 python-dotenv
 kaggle

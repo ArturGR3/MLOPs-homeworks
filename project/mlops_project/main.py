@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 import sys
+import subprocess
 from dotenv import load_dotenv, find_dotenv
 
 import mlflow
@@ -18,6 +19,7 @@ from modules.data_preprocesing import DataPreprocessor
 from modules.feature_engineering import FeatureEnginering
 from modules.autogloun_model_class import AutogluonModel
 from modules.metrics import root_mean_squared_log_error
+from modules.mlflow_client import MLflowAutoGluon
 from autogluon.tabular import TabularPredictor
 
 
@@ -46,96 +48,72 @@ test = data_preprocessor.optimize_dtypes(test)
 # feature_engineering.openfe_fit(train)
 # Feature engineering with OpenFE
 feature_engineering = FeatureEnginering(competition_name, target_column="cost")
-train_transforment, test_transformend = feature_engineering.openfe_transform(train, test)
+train_transformed, test_transformend = feature_engineering.openfe_transform(train, test)
 
-# Apply AutoGluon training
-predictor = TabularPredictor(label="cost")
-predictor.fit(
-    train_transforment, presets="medium_quality", time_limit=run_time * 60, infer_limit=0.001
+train_transformed = pd.read_pickle(
+    filepath_or_buffer=f"{project_path}/data/{competition_name}/feature_engineered/train_transformed.pkl"
 )
-
-leaderboard = predictor.leaderboard(silent=True)
-best_model = leaderboard.loc[leaderboard["score_val"].idxmax()]
-score_val = round(-best_model["score_val"], 4)
-inf_time = round(best_model["pred_time_val"], 4)
-fit_time = round(best_model["fit_time"], 4)
-
-print(f"tracking URI: '{mlflow.get_tracking_uri()}'")
-
-# Log it with mlflow
-mlflow.set_tracking_uri("sqlite:///mlflow.db")
-mlflow.set_experiment("test")
-presets = ["medium_quality"]
-
-
-## define a metric in a separate file
-rmsle = make_scorer(
-    "rmsle", root_mean_squared_log_error, greater_is_better=False, needs_proba=False
+test_transformed = pd.read_pickle(
+    filepath_or_buffer=f"{project_path}/data/{competition_name}/feature_engineered/test_transformed.pkl"
 )
-
-# Iterate over the presets
-for preset in presets:
-    # Start a parent run for the preset
-    with mlflow.start_run(run_name=f"{preset}") as parent_run:
-        # Train AutoGluon with the preset
-        predictor = TabularPredictor(
-            label=target, path=f"AutoGloun_mlflow_{preset}", eval_metric=rmsle
-        )
-        predictor.fit(
-            train_data=train,
-            time_limit=run_time * 60,
-            presets=preset,
-            excluded_model_types=["KNN", "NN"],
-        )
-
-        # Predict on the test set for subission
-        test_pred = predictor.predict(test)
-        submission[target] = test_pred
-
-        # Submit to kaggle using kaggle_submition
-        kaggle_score = kaggle_client.submit(
-            submission,
-            competition_name=competition_name,
-            model_name=f"AutoGloun_{preset}",
-            message="test",
-        )
-
-        # Get the leaderboard
-        leaderboard = predictor.leaderboard(silent=True)
-
-        # Select the row with the best validation score
-        best_model = leaderboard.loc[leaderboard["score_val"].idxmax()]
-        score_val = round(-best_model["score_val"], 4)
-        inf_time = round(best_model["pred_time_val"], 4)
-        fit_time = round(best_model["fit_time"], 4)
-
-        # Log best model to MLflow
-        mlflow.log_metric("score_val", score_val)
-        mlflow.log_metric("inference_time", inf_time)
-        mlflow.log_metric("fit_time", fit_time)
-        mlflow.log_metric("kaggle_score", round(kaggle_score, 4))
-
-        # Iterate over the models in the leaderboard
-        for index, row in leaderboard.iterrows():
-            model_name = row["model"]
-            model_path = f"AutoGloun_mlflow_{preset}/models/{model_name}/"
-
-            # Start a child run for the model
-            with mlflow.start_run(run_name=model_name, nested=True) as child_run:
-                # Log the model's score and inference time
-                mlflow.set_tag("model_name", model_name)
-                mlflow.log_metric("score_val", round(-row["score_val"], 4))
-                mlflow.log_metric("inference_time", round(row["pred_time_val"], 4))
-                mlflow.log_metric("fit_time", round(row["fit_time"], 4))
-
-                # Log the model in MLflow
-                model = AutogluonModel()
-                artifacts = {"predictor_path": model_path}
-                mlflow.pyfunc.log_model(
-                    artifact_path="artifacts", python_model=model, artifacts=artifacts
-                )
-
 
 # Deploy it as a batch, streaming or online service
 
 # Create a visualization in Looker
+
+# Example usage
+# Scenario 1:
+## Tracking server: no
+## Backend store: local filesystem
+## Artifacts store: local filesystem
+
+mlflow_autogluon_local = MLflowAutoGluon(
+    tracking_server="no",
+    backend_store=f"{project_path}/mlruns",
+    artifact_location=f"{project_path}/mlruns",
+    experiment_name="test",
+)
+mlflow_autogluon_local.train_and_log_model(
+    presets=["medium_quality"],
+    target=target,
+    train_transformed=train_transformed,
+    test_transformed=test_transformed,
+    run_time=1,
+)
+
+# Scenario 2:
+## tracking server: yes, local server
+## backend store: sqlite database
+## artifacts store: local filesystem
+
+mlflow_autogluon_local_server = MLflowAutoGluon(
+    tracking_server="local",
+    backend_store=f"{project_path}/backend.db",
+    artifact_location=f"{project_path}/mlruns",
+    experiment_name="test",
+)
+mlflow_autogluon_local_server.train_and_log_model(
+    presets=["medium_quality"],
+    target=target,
+    train_transformed=train_transformed,
+    test_transformed=test_transformed,
+    run_time=1,
+)
+
+# Scenario 3: Remote server with PostgreSQL and S3
+tracking_server = os.getenv("TRACKING_SERVER_HOST")
+artifact_path_s3 = os.getenv("AWS_BUCKET_NAME")
+
+mlflow_autogluon_remote_aws_ec2 = MLflowAutoGluon(
+    tracking_server="remote",
+    backend_store=tracking_server,
+    artifact_location=f"s3://{artifact_path_s3}",
+    experiment_name="test",
+)
+mlflow_autogluon_remote_aws_ec2.train_and_log_model(
+    presets=["medium_quality"],
+    target=target,
+    train_transformed=train_transformed,
+    test_transformed=test_transformed,
+    run_time=1,
+)
