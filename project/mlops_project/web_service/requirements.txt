@@ -1,0 +1,4 @@
+flask
+gunicorn
+pandas
+autogluon.tabular[all]
