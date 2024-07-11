@@ -1,0 +1,29 @@
+# Use an official Python runtime as a parent image
+FROM python:3.9-slim
+
+# Update package index, install necessary packages, upgrade pip, and clean up
+RUN apt-get update && \
+    apt-get install -y libgomp1 && \
+    rm -rf /var/lib/apt/lists/* && \
+    pip install --no-cache-dir --upgrade pip
+
+# Set the working directory
+WORKDIR /app
+
+# Copy the requirements file and install dependencies
+COPY requirements_web_service.txt /app/
+RUN pip install --no-cache-dir -r requirements_web_service.txt
+
+# Copy the rest of the application code
+# COPY AutoGluon_mlflow_medium_quality /app/AutoGluon_mlflow_medium_quality
+COPY AutoGluon_mlflow_best_quality_deployment /app/AutoGluon_mlflow_best_quality_deployment
+COPY modules /app/modules
+COPY predict_web_service.py /app/
+
+# Expose the port on which the app will run
+EXPOSE 9696
+
+# Command to run the application using Gunicorn
+ENTRYPOINT ["gunicorn", "--bind=0.0.0.0:9696", "predict_web_service:app"]
+# entry point bash
+# CMD ["bash"]

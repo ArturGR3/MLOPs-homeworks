@@ -18,7 +18,8 @@ from modules.kaggle_client import KaggleClient
 from modules.data_preprocesing import DataPreprocessor
 from modules.feature_engineering import FeatureEnginering
 from modules.autogloun_model_class import AutogluonModel
-from modules.metrics import root_mean_squared_log_error
+
+# from modules.metrics import root_mean_squared_log_error
 from modules.mlflow_client import MLflowAutoGluon
 from autogluon.tabular import TabularPredictor
 
@@ -28,12 +29,12 @@ run_time = 1
 target = "cost"
 
 # Initialize KaggleClient to be able to talk to kaggle API
-kaggle_client = KaggleClient()
+kaggle_client = KaggleClient(competition_name=competition_name, target_column=target)
 
 # Downloads raw data for a given competition locally to the data folder
 ### potentially adjust to AWS or GCS storage as an option
 ### make sure that the path to the data is sourced from .env
-kaggle_client.download_data(competition_name)
+kaggle_client.download_data()
 
 # Preprocess data to adjust data types and reduce memory usage
 data_preprocessor = DataPreprocessor(competition_name)
@@ -45,6 +46,9 @@ train = data_preprocessor.optimize_dtypes(train)
 test = data_preprocessor.optimize_dtypes(test)
 
 
+predictor = TabularPredictor.load(
+    "/home/artur/MLOPs-homeworks/project/mlops_project/web_service/AutoGluon_mlflow_medium_quality_deployment"
+)
 # feature_engineering.openfe_fit(train)
 # Feature engineering with OpenFE
 feature_engineering = FeatureEnginering(competition_name, target_column="cost")
@@ -56,6 +60,9 @@ train_transformed = pd.read_pickle(
 test_transformed = pd.read_pickle(
     filepath_or_buffer=f"{project_path}/data/{competition_name}/feature_engineered/test_transformed.pkl"
 )
+
+# Create autogloun model
+
 
 # Deploy it as a batch, streaming or online service
 
@@ -72,6 +79,8 @@ mlflow_autogluon_local = MLflowAutoGluon(
     backend_store=f"{project_path}/mlruns",
     artifact_location=f"{project_path}/mlruns",
     experiment_name="test",
+    competition_name=competition_name,
+    target_name=target,
 )
 mlflow_autogluon_local.train_and_log_model(
     presets=["medium_quality"],
@@ -79,6 +88,8 @@ mlflow_autogluon_local.train_and_log_model(
     train_transformed=train_transformed,
     test_transformed=test_transformed,
     run_time=1,
+    for_deployment=True,
+    for_kaggle_submission=True,
 )
 
 # Scenario 2:
@@ -91,9 +102,11 @@ mlflow_autogluon_local_server = MLflowAutoGluon(
     backend_store=f"{project_path}/backend.db",
     artifact_location=f"{project_path}/mlruns",
     experiment_name="test",
+    competition_name=competition_name,
+    target_name=target,
 )
 mlflow_autogluon_local_server.train_and_log_model(
-    presets=["medium_quality"],
+    presets=["best_quality"],
     target=target,
     train_transformed=train_transformed,
     test_transformed=test_transformed,
@@ -101,6 +114,7 @@ mlflow_autogluon_local_server.train_and_log_model(
 )
 
 # Scenario 3: Remote server with PostgreSQL and S3
+# You need to make sure that EC2 instance is running the server (per module2 instructions)
 tracking_server = os.getenv("TRACKING_SERVER_HOST")
 artifact_path_s3 = os.getenv("AWS_BUCKET_NAME")
 
@@ -109,11 +123,23 @@ mlflow_autogluon_remote_aws_ec2 = MLflowAutoGluon(
     backend_store=tracking_server,
     artifact_location=f"s3://{artifact_path_s3}",
     experiment_name="test",
+    competition_name=competition_name,
+    target_name=target,
 )
 mlflow_autogluon_remote_aws_ec2.train_and_log_model(
-    presets=["medium_quality"],
+    presets=["best_quality"],
     target=target,
     train_transformed=train_transformed,
     test_transformed=test_transformed,
     run_time=1,
 )
+
+
+# with open(os.devnull, "wb") as devnull:
+#     process = subprocess.Popen(
+#         ["mlflow", "server", "--backend-store-uri", f"sqlite:///{backend_store}"],
+#         stdout=devnull,
+#         stderr=devnull,
+#         stdin=devnull,
+#         close_fds=True,
+#     )

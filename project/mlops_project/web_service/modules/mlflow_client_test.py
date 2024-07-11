@@ -6,10 +6,11 @@ import pandas as pd
 from autogluon.core.metrics import make_scorer
 from autogluon.tabular import TabularPredictor
 from mlflow.pyfunc import PythonModel
+from modules.kaggle_client import KaggleClient
 
-# from modules.kaggle_client import KaggleClient
+# from metrics import root_mean_squared_log_error
 
-# from metrics.py
+# metrics.py
 from sklearn.metrics import mean_squared_log_error
 import numpy as np
 
@@ -115,7 +116,7 @@ class MLflowAutoGluon:
         test_transformed,
         run_time,
         for_deployment=True,
-        for_kaggle_submission=False,  # Changed to False to disable Kaggle submission
+        for_kaggle_submission=True,
     ):
         rmsle = make_scorer(
             "rmsle", root_mean_squared_log_error, greater_is_better=False, needs_proba=False
@@ -156,26 +157,26 @@ class MLflowAutoGluon:
 
                 predictor.refit_full()
 
-                # if for_kaggle_submission:
-                #     kaggle_client = KaggleClient(self.competition_name, target)
-                #     submission_path = f"data/{self.competition_name}/submission_files"
-                #     os.makedirs(submission_path, exist_ok=True)
+                if for_kaggle_submission:
+                    kaggle_client = KaggleClient(self.competition_name, target)
+                    submission_path = f"data/{self.competition_name}/submission_files"
+                    os.makedirs(submission_path, exist_ok=True)
 
-                #     submission = pd.read_csv(
-                #         f"data/{self.competition_name}/raw/sample_submission.csv"
-                #     )
-                #     submission[target] = predictor.predict(test_transformed)
-                #     submission_file = f"{submission_path}/sub_{run_time}_{preset}.csv"
-                #     submission.to_csv(submission_file, index=False)
+                    submission = pd.read_csv(
+                        f"data/{self.competition_name}/raw/sample_submission.csv"
+                    )
+                    submission[target] = predictor.predict(test_transformed)
+                    submission_file = f"{submission_path}/sub_{run_time}_{preset}.csv"
+                    submission.to_csv(submission_file, index=False)
 
-                #     kaggle_score = kaggle_client.submit(
-                #         submission_file=submission_file,
-                #         model_name=preset,
-                #         message=f"AutoGluon {preset} {run_time} min",
-                #     )
-                #     mlflow.log_metric("kaggle_score", kaggle_score)
+                    kaggle_score = kaggle_client.submit(
+                        submission_file=submission_file,
+                        model_name=preset,
+                        message=f"AutoGluon {preset} {run_time} min",
+                    )
+                    mlflow.log_metric("kaggle_score", kaggle_score)
 
-                save_path = f"AutoGluon_mlflow_{preset}" + (
+                save_path = f"web_service/AutoGluon_mlflow_{preset}" + (
                     "_deployment" if for_deployment else ""
                 )
                 predictor_clone = (
@@ -186,8 +187,8 @@ class MLflowAutoGluon:
                     else predictor.save(save_path)
                 )
 
-                # if for_kaggle_submission:
-                #     submission.to_csv(f"{save_path}/sub_{run_time}_{preset}.csv", index=False)
+                if for_kaggle_submission:
+                    submission.to_csv(f"{save_path}/sub_{run_time}_{preset}.csv", index=False)
 
                 model = self.AutogluonModel()
                 mlflow.pyfunc.log_model(
