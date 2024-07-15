@@ -13,3 +13,8 @@ mlops_project.env
 .venv
 kaggle.json
 gcp_key.json
+web_service/test_model_ag
+web-service-mlflow/test_model_ag
+web-service-mlflow/autogloun_for_deployment
+helper.md
+model_ag_deployment

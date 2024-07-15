@@ -15,12 +15,12 @@ if project_path not in sys.path:
     sys.path.append(project_path)
 
 from modules.kaggle_client import KaggleClient
-from modules.data_preprocesing import DataPreprocessor
+from modules.data_preprocesing_1 import DataPreprocessor
 from modules.feature_engineering import FeatureEnginering
-from modules.autogloun_model_class import AutogluonModel
 
 # from modules.metrics import root_mean_squared_log_error
 from modules.mlflow_client import MLflowAutoGluon
+import logging
 from autogluon.tabular import TabularPredictor
 
 
@@ -37,6 +37,10 @@ kaggle_client = KaggleClient(competition_name=competition_name, target_column=ta
 kaggle_client.download_data()
 
 # Preprocess data to adjust data types and reduce memory usage
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 data_preprocessor = DataPreprocessor(competition_name)
 train = pd.read_csv(os.path.join(data_preprocessor.df_raw_path, "train.csv"))
 test = pd.read_csv(os.path.join(data_preprocessor.df_raw_path, "test.csv"))

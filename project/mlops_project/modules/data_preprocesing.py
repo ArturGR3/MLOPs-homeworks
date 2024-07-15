@@ -5,8 +5,28 @@ import pandas as pd
 
 
 class DataPreprocessor:
-    def __init__(self, competition_name):
+    """
+    A class for preprocessing data.
 
+    Args:
+        competition_name (str): The name of the competition.
+
+    Attributes:
+        df_raw_path (str): The path to the raw data.
+        df_path (str): The path to the preprocessed data.
+
+    Methods:
+        adjust_column_names: Adjusts column names by replacing special characters with underscores.
+        downcast_int_columns: Downcasts integer columns to reduce memory usage.
+        downcast_float_columns: Downcasts float columns to reduce memory usage.
+        convert_object_to_category: Converts object columns to category columns if the number of unique values is less than 50% of the total values, otherwise converts them to datetime columns.
+        convert_float_to_int: Converts float columns to integer columns if all fractional parts are 0.
+        store_df: Stores the DataFrame as a pickle file.
+        optimize_dtypes: Optimizes the data types of the DataFrame by applying various preprocessing steps.
+
+    """
+
+    def __init__(self, competition_name):
         project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         data_path = os.path.join(project_root, f"data/{competition_name}/prepocessed")
         self.df_raw_path = os.path.join(project_root, f"data/{competition_name}/raw")
@@ -14,23 +34,64 @@ class DataPreprocessor:
         os.makedirs(self.df_path, exist_ok=True)
 
     def adjust_column_names(self, df):
+        """
+        Adjusts column names by replacing special characters with underscores.
+
+        Args:
+            df (pd.DataFrame): The DataFrame to adjust column names.
+
+        Returns:
+            pd.DataFrame: The DataFrame with adjusted column names.
+
+        """
         df = df.copy()
         df.columns = df.columns.str.replace(r"[.\(\) ]", "_", regex=True)
         return df
 
     def downcast_int_columns(self, df):
+        """
+        Downcasts integer columns to reduce memory usage.
+
+        Args:
+            df (pd.DataFrame): The DataFrame to downcast integer columns.
+
+        Returns:
+            pd.DataFrame: The DataFrame with downcasted integer columns.
+
+        """
         int_columns = df.select_dtypes(include=["int64", "int32"]).columns
         for col in int_columns:
             df[col] = pd.to_numeric(df[col], downcast="integer")
         return df
 
     def downcast_float_columns(self, df):
+        """
+        Downcasts float columns to reduce memory usage.
+
+        Args:
+            df (pd.DataFrame): The DataFrame to downcast float columns.
+
+        Returns:
+            pd.DataFrame: The DataFrame with downcasted float columns.
+
+        """
         float_columns = df.select_dtypes(include=["float64", "float32"]).columns
         for col in float_columns:
             df[col] = pd.to_numeric(df[col], downcast="float")
         return df
 
     def convert_object_to_category(self, df):
+        """
+        Converts object columns to category columns if the number of unique values is less than 50% of the total values,
+        otherwise converts them to datetime columns.
+
+        Args:
+            df (pd.DataFrame): The DataFrame to convert object columns.
+
+        Returns:
+            pd.DataFrame: The DataFrame with converted object columns.
+
+        """
         object_columns = df.select_dtypes(include=["object"]).columns
         for col in object_columns:
             num_unique_values = len(df[col].unique())
@@ -45,6 +106,16 @@ class DataPreprocessor:
         return df
 
     def convert_float_to_int(self, df):
+        """
+        Converts float columns to integer columns if all fractional parts are 0.
+
+        Args:
+            df (pd.DataFrame): The DataFrame to convert float columns.
+
+        Returns:
+            pd.DataFrame: The DataFrame with converted float columns.
+
+        """
         float_columns = df.select_dtypes(include=["float32", "float64"]).columns
         for col in float_columns:
             if np.all(np.modf(df[col])[0] == 0):  # Checking if all fractional parts are 0
@@ -60,11 +131,32 @@ class DataPreprocessor:
         return df
 
     def store_df(self, df, filename):
+        """
+        Stores the DataFrame as a pickle file.
 
+        Args:
+            df (pd.DataFrame): The DataFrame to store.
+            filename (str): The filename of the pickle file.
+
+        """
         df.to_pickle(os.path.join(self.df_path, filename))
         print(f"data stored in {os.path.join(self.df_path, filename)}")
 
     def optimize_dtypes(self, df, verbose=True, convert_float_to_int=True, save=True):
+        """
+        Optimizes the data types of the DataFrame by applying various preprocessing steps.
+
+        Args:
+            df (pd.DataFrame): The DataFrame to optimize data types.
+            verbose (bool, optional): Whether to print verbose output. Defaults to True.
+            convert_float_to_int (bool, optional): Whether to convert float columns to integer columns. Defaults to True.
+            save (bool, optional): Whether to save the optimized DataFrame and metadata. Defaults to True.
+
+        Returns:
+            pd.DataFrame: The optimized DataFrame.
+
+        """
+
         def memory_usage_in_gb(df):
             return df.memory_usage(deep=True).sum() / (1024**3)
 
