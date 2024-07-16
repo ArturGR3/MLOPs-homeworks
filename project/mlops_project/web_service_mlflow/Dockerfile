@@ -15,7 +15,7 @@ COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the model_ag_deployment directory from the host machine into the container at /app/model_ag_deployment
-COPY model_ag_deployment /app/model_ag_deployment
+# COPY model_ag_deployment /app/model_ag_deployment
 
 # Copy the modules directory from the host machine into the container at /app/modules
 COPY modules /app/modules

@@ -4,4 +4,4 @@ pandas
 boto3
 python-dotenv
 mlflow 
-autogluon.tabular[all]
+autogluon.tabular[lightgbm, xgboost, catboost]

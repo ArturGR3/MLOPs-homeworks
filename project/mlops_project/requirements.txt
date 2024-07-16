@@ -7,10 +7,9 @@ psycopg2-binary
 pytest
 python-dotenv
 kaggle
-autogloun.tabular
+autogluon.tabular[lightgbm, xgboost, catboost]
 openfe
 mlflow 
 boto3 
 google-cloud-storage
 
--e .

@@ -50,9 +50,6 @@ train = data_preprocessor.optimize_dtypes(train)
 test = data_preprocessor.optimize_dtypes(test)
 
 
-predictor = TabularPredictor.load(
-    "/home/artur/MLOPs-homeworks/project/mlops_project/web_service/AutoGluon_mlflow_medium_quality_deployment"
-)
 # feature_engineering.openfe_fit(train)
 # Feature engineering with OpenFE
 feature_engineering = FeatureEnginering(competition_name, target_column="cost")
@@ -93,7 +90,7 @@ mlflow_autogluon_local.train_and_log_model(
     test_transformed=test_transformed,
     run_time=1,
     for_deployment=True,
-    for_kaggle_submission=True,
+    for_kaggle_submission=False,
 )
 
 # Scenario 2:
@@ -105,7 +102,7 @@ mlflow_autogluon_local_server = MLflowAutoGluon(
     tracking_server="local",
     backend_store=f"{project_path}/backend.db",
     artifact_location=f"{project_path}/mlruns",
-    experiment_name="test",
+    experiment_name="test_32",
     competition_name=competition_name,
     target_name=target,
 )
