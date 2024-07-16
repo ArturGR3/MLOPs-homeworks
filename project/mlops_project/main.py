@@ -15,7 +15,7 @@ if project_path not in sys.path:
     sys.path.append(project_path)
 
 from modules.kaggle_client import KaggleClient
-from modules.data_preprocesing_1 import DataPreprocessor
+from modules.data_preprocesing import DataPreprocessor
 from modules.feature_engineering import FeatureEnginering
 
 # from modules.metrics import root_mean_squared_log_error
