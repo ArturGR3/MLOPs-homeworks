@@ -19,3 +19,5 @@ web-service-mlflow/autogloun_for_deployment
 helper.md
 model_ag_deployment
 Miniconda3-latest-Linux-x86_64.sh
+feature_engineering/feature_engineering.env
+feature_engineering/data
