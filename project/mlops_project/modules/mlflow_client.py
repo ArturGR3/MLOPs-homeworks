@@ -186,6 +186,7 @@ class MLflowAutoGluon:
 
                 test_pred = predictor.predict(test_transformed)
                 leaderboard = predictor.leaderboard(silent=True)
+                # final model
                 best_model = leaderboard.loc[leaderboard["score_val"].idxmax()]
                 mlflow.log_metrics(
                     {
