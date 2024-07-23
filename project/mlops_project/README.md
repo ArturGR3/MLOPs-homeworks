@@ -1,6 +1,6 @@
 # End to End ML Deployment Using AutoGluon
 
-This project demonstrates an end-to-end machine learning deployment pipeline covering everything from: 
+This project demonstrates an end-to-end machine learning deployment pipeline covering: 
 1) Data acquisition (Kaggle competition using Kaggle API)
 2) Data cleaning and data type optimization for memory usage reduction
 3) Feature enginering (using automated feature engineering framework OpenFE)

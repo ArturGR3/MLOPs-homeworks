@@ -6,19 +6,20 @@ import pandas as pd
 from autogluon.core.metrics import make_scorer
 from autogluon.tabular import TabularPredictor
 from mlflow.pyfunc import PythonModel
-
-# from modules.kaggle_client import KaggleClient
-
-# from metrics.py
-from sklearn.metrics import mean_squared_log_error
 import numpy as np
 
-
+# Custom metric function for Root Mean Squared Logarithmic Error
 def root_mean_squared_log_error(y_true, y_pred):
     return np.sqrt(np.mean(np.square(np.log1p(y_pred) - np.log1p(y_true))))
 
 
 class MLflowAutoGluon:
+    """
+    A class to manage MLflow experiments and AutoGluon model training.
+    
+    This class sets up MLflow tracking, creates experiments, and handles model training
+    using AutoGluon, logging the results to MLflow.
+    """
     def __init__(
         self,
         tracking_server,
@@ -28,6 +29,17 @@ class MLflowAutoGluon:
         competition_name,
         target_name,
     ):
+        """
+        Initialize the MLflowAutoGluon instance.
+        
+        Args:
+            tracking_server (str): Type of tracking server to use ('no', 'local', or 'remote')
+            backend_store (str): Path or URL for the MLflow backend store
+            artifact_location (str): Location to store artifacts
+            experiment_name (str): Name of the MLflow experiment
+            competition_name (str): Name of the Kaggle competition
+            target_name (str): Name of the target variable
+        """
         self.tracking_server = tracking_server
         self.backend_store = backend_store
         self.artifact_location = artifact_location
@@ -37,6 +49,9 @@ class MLflowAutoGluon:
         self.setup_mlflow()
 
     class AutogluonModel(PythonModel):
+        """
+        A wrapper class for AutoGluon models to be used with MLflow.
+        """
         def load_context(self, context):
             self.predictor = TabularPredictor.load(context.artifacts.get("predictor_path"))
 
@@ -45,11 +60,26 @@ class MLflowAutoGluon:
 
     @staticmethod
     def check_port_in_use(port):
+        """
+        Check if a given port is in use.
+        
+        Args:
+            port (int): Port number to check
+        
+        Returns:
+            tuple: (bool, str) indicating if the port is in use and the process IDs using it
+        """
         result = subprocess.run(["lsof", "-ti", f":{port}"], capture_output=True, text=True)
         return result.returncode == 0, result.stdout.strip()
 
     @staticmethod
     def kill_process_on_port(port=5000):
+        """
+        Kill processes running on a specified port.
+        
+        Args:
+            port (int): Port number to kill processes on
+        """
         in_use, pids = MLflowAutoGluon.check_port_in_use(port)
         if in_use:
             for pid in pids.split("\n"):
@@ -59,6 +89,12 @@ class MLflowAutoGluon:
             print(f"No process to kill on port {port}")
 
     def start_mlflow_server(self, port=5000):
+        """
+        Start the MLflow tracking server.
+        
+        Args:
+            port (int): Port number for the MLflow server
+        """
         self.kill_process_on_port(port)
         with open(os.devnull, "wb") as devnull:
             subprocess.Popen(
@@ -76,6 +112,9 @@ class MLflowAutoGluon:
             print(f"Failed to start MLflow server on port {port}")
 
     def create_mlflow_experiment(self):
+        """
+        Create an MLflow experiment or use an existing one.
+        """
         experiment = mlflow.get_experiment_by_name(self.experiment_name)
         if experiment is None:
             experiment_id = mlflow.create_experiment(
@@ -92,6 +131,9 @@ class MLflowAutoGluon:
         print(f"Creation timestamp: {experiment.creation_time}")
 
     def setup_mlflow(self):
+        """
+        Set up MLflow tracking based on the specified tracking server type.
+        """
         if self.tracking_server == "no":
             print("Local setup with no tracking server")
             mlflow.set_tracking_uri(f"file://{self.backend_store}")
@@ -115,8 +157,18 @@ class MLflowAutoGluon:
         test_transformed,
         run_time,
         for_deployment=True,
-        for_kaggle_submission=False,  # Changed to False to disable Kaggle submission
     ):
+        """
+        Train AutoGluon models and log results to MLflow.
+        
+        Args:
+            presets (list): List of AutoGluon presets to use for training
+            target (str): Name of the target variable
+            train_transformed (DataFrame): Transformed training data
+            test_transformed (DataFrame): Transformed test data
+            run_time (int): Time limit for training in minutes
+            for_deployment (bool): Whether to prepare the model for deployment
+        """
         rmsle = make_scorer(
             "rmsle", root_mean_squared_log_error, greater_is_better=False, needs_proba=False
         )

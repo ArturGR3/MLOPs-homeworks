@@ -1,5 +1,6 @@
 import os
 import re
+import warnings
 import pandas as pd
 from openfe import OpenFE, transform, tree_to_formula
 import contextlib
@@ -37,42 +38,19 @@ class FeatureEnginering:
         Returns:
         tuple: Stratified samples, train and validation data.
         """
-        train_df, val_df = train_test_split(data, test_size=0.2, random_state=1)
-        data_s = train_df.copy()
-        data_s["bins"] = pd.qcut(data_s[self.target_column], q=bins, labels=False)
-        sample = (
-            data_s.groupby("bins")
-            .apply(lambda x: x.sample(n=size_per_bin, random_state=1))
-            .reset_index(drop=True)
-        )
+        data_s = data.copy()
+        data_s["bins"] = pd.qcut(data_s[self.target_column], q=min(bins, len(data_s)//2), duplicates='drop', labels=False)
+
+        sample = data_s.groupby("bins").apply(
+            lambda x: x.sample(n=min(size_per_bin, len(x)), random_state=1)
+        ).reset_index(drop=True)
+
         sample = sample.drop(columns=["bins"])
         X_train_stratified = sample.drop(columns=[self.target_column])
         y_train_stratified = sample[self.target_column]
-        return X_train_stratified, y_train_stratified, train_df, val_df
+        return X_train_stratified, y_train_stratified
 
-    def train_quick_autogluon(
-        self, train_df, val_df, preset="medium_quality", time_limit_minutes=1, metric="rmse"
-    ):
-        """
-        Train a quick AutoGluon model.
-
-        Parameters:
-        train_df (pd.DataFrame): The training data.
-        val_df (pd.DataFrame): The validation data.
-        preset (str): The preset quality setting for AutoGluon.
-        time_limit_minutes (int): The time limit for training in minutes.
-        metric (str): The evaluation metric.
-
-        Returns:
-        float: The negative evaluation score.
-        """
-        predictor = TabularPredictor(label=self.target_column, eval_metric=metric)
-        predictor.fit(train_data=train_df, time_limit=time_limit_minutes * 60, presets=preset)
-        score = predictor.evaluate(val_df)
-        metric = list(score.keys())[0]
-        return -score[metric]
-
-    def openfe_fit(self, data, number_of_features=5):
+    def openfe_fit(self, data, number_of_features=5, **kwargs):
         """
         Fit OpenFE on the data.
 
@@ -84,18 +62,20 @@ class FeatureEnginering:
         OpenFE: The fitted OpenFE object.
         """
         ofe = OpenFE()
-        X_train_stratified, y_train_stratified, _, _ = self.stratified_sample(data)
+        X_train_stratified, y_train_stratified = self.stratified_sample(data, **kwargs)
 
         with contextlib.redirect_stdout(None):  # Suppress the output
-            ofe.fit(data=X_train_stratified, label=y_train_stratified, n_jobs=4)
+            with warnings.catch_warnings():  # Suppress warnings
+                warnings.filterwarnings("ignore", category=FutureWarning, module="sklearn.metrics")
+                ofe.fit(data=X_train_stratified, label=y_train_stratified, n_jobs=4)
 
         print(f"The top {number_of_features} generated features are:")
         for feature in ofe.new_features_list[:number_of_features]:
             print(tree_to_formula(feature))
 
         return ofe
-
-    def openfe_transform(self, train, test, number_of_features=5):
+       
+    def openfe_transform(self, train, test, number_of_features=5, **kwargs):
         """
         Transform the data using OpenFE.
 
@@ -106,7 +86,7 @@ class FeatureEnginering:
         Returns:
         pd.DataFrame: The transformed data.
         """
-        ofe = self.openfe_fit(train, number_of_features)
+        ofe = self.openfe_fit(train, number_of_features, **kwargs)
         # names = [tree_to_formula(f) for f in ofe.new_features_list[:number_of_features]]
         # apply re.sub(r'\W+', '_', name) to each name with apply and lambda
         train_transformed, test_transformed = transform(
