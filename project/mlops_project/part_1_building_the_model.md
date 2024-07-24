@@ -4,6 +4,8 @@ Below we will focuse on the initial phase of our project. We begin by acquiring 
 
 The part 2 we will cover model deployment as web-service, monitoring with Prometheus and Grafana.
 
+---
+---
 ## Table of Contents
 - [Importing Libraries](#importing-libraries)
 - [Connecting to Kaggle Competition and Downloading Data](#connecting-to-kaggle-competition-and-downloading-data)
@@ -12,12 +14,13 @@ The part 2 we will cover model deployment as web-service, monitoring with Promet
 - [Model Building using AutoGluon and Tracking using MLflow Server](#model-building-using-autogluon-and-tracking-using-mlflow-server)
 - [Submitting Results to Kaggle Competition and Storing Results in MLflow](#submitting-results-to-kaggle-competition-and-storing-results-in-mlflow)
 - [Conclusion and Next Steps](#conclusion-and-next-steps)
-
+---
+---
 
 ### Importing Libraries
-
-You can notice below that most of the code is wrapped in custom modules. 
 ---
+You can notice below that most of the code is wrapped in custom modules. 
+
 [kaggle_client](modules/kaggle_client.py) - is a convinient wrapper class that streamlines interactions with Kaggle competitions. It offers functionality for downloading competition data (train, test and sumbition files) and submitting predictions, making it easier to participate in Kaggle competitions programmatically.
 
 Features:
@@ -84,9 +87,10 @@ from modules.download_folder_s3 import download_s3_folder, list_files_in_s3_fold
 ```
     project path /workspaces/MLOPs-homeworks/project/mlops_project
 
-
+---
+---
 ### Connecting to Kaggle Competition and Downloading Data
-
+---
 We are using one of the tabular playground searies [Regression with a Tabular Media Campaign Cost Dataset](https://www.kaggle.com/competitions/playground-series-s3e11/overview) that aim to predict the cost of media campaign. This analysis could be easily replicated to other tabular series by changing below parameters.
 
 ```python
@@ -109,9 +113,10 @@ os.listdir(f"{project_path}/data/{competition_name}/raw")
     Data downloaded /workspaces/MLOPs-homeworks/project/mlops_project/data/playground-series-s3e11/raw
 
     ['train.csv', 'test.csv', 'sample_submission.csv']
-
-
+---
+---
 ### Data Preprocessing
+---
 Here were will perform some data types optimization techniques to reduce the storage size and efficiency of the models that we are building. Some of the optimization techniques include:
 1) Downcasting numeric columns to reduce memory usage.
 2) Converting object columns to category or datetime columns based on uniqueness.
@@ -363,6 +368,7 @@ df_dtype_changes = pd.DataFrame(dtype_changes)
 df_dtype_changes.T
 ```
 Below you can see what were the data types changes, you can notice that some of the heavy float64 data types moved to int8, that significantly reduced that memory usage.
+
 <div>
 <style scoped>
     .dataframe tbody tr th:only-of-type {
@@ -470,8 +476,10 @@ Below you can see what were the data types changes, you can notice that some of 
 </table>
 </div>
 
-
+---
+---
 ### Automated Feature Engineering using OpenFE library
+---
 We use open source package [OpenFE](https://github.com/IIIS-Li-Group/OpenFE) for automated feature engineering. It takes time to run this process on relatevilly large datasets, thus we perform stratified sampling to be able to create features faster. More in depth analysis about this technique and effect of new features on model performance you can find it this [Medium article](paste a link).
 
 ```python
@@ -496,8 +504,10 @@ test_transformed = pd.read_pickle(
     (store_sqft/florist)
     CombineThenFreq(total_children,store_sqft)
     (avg_cars_at_home_approx__1/store_sqft)
-
+---
+---
 ### Model Building using AutoGluon and Tracking using MLflow Server
+---
 For model building, we will use the AutoML library AutoGluon, which provides an easy way to create an ensemble of models with hyperparameter tuning in a few lines of code. We will use an MLflow server on EC2 with an S3 bucket as the artifact store to keep track of model performance. AutoGluon offers a way to store the model specifically for deployment, reducing the memory requirements. We will use this model in part 2 for deployment as a web service.
 
 ```python
@@ -525,8 +535,10 @@ mlflow_autogluon_remote_aws_ec2.train_and_log_model(
     run_time=4,
 )
 ```
-
+---
+---
 ### Submitting Results to Kaggle Competition and Storing Results in MLflow
+---
 We will use our model to create predictiong for Kaggle competition and use Kaggle API to submit our results. For that we will use MlflowClient to get the experiment name, experiment id and run_id. We will need this information to download the model from s3 bucket locally to perform prediction on test set.
 
 ```python
@@ -570,7 +582,7 @@ else:
     Experiment ID: 3, Run ID: 62f1decc0ef14c0a80d3aef1e1643018
 
 
-I created a convinient function list_files_in_s3_folder to list the contents of the s3 folder where we stored our model.
+I created a convinient function [list_files_in_s3_folder](modules/download_folder_s3.py) to list the contents of the s3 folder where we stored our model.
 
 
 ```python
@@ -578,7 +590,7 @@ s3_folder = f"{run_id}/artifacts/AutoGluon_mlflow_best_quality_deployment/artifa
 list_files_in_s3_folder(bucket_name=artifact_path_s3, s3_folder=s3_folder)
 ```
 
-Based on my research you can pull files one at a time from s3 bucket, but there is no direct way to download the folder with all its contents. I built the function download_s3_folder that does that. Below we store our model locally to further use it for predicting on the test set and deploy it as web service.
+Based on my research you can pull files one at a time from s3 bucket, but there is no direct way to download the folder with all its contents. I built the function [download_s3_folder](modules/download_folder_s3.py) that does that. Below we store our model locally to further use it for predicting on the test set and deploy it as web service.
 
 ```python
 download_s3_folder(bucket_name=artifact_path_s3, 
@@ -698,8 +710,4 @@ For the sake of simplicity I left them here commented, but user can try them on 
 
 ### Conclusion and Next steps
 
-Things to add: 
-1) automatic pull of experiment name, id, run_id, without manually adding them. 
-2) add screenshots from the Mlflow with kaggle score and supporting models.
-
-The first part of the project that covers parts from getting the data and building the model for deployment
+....
