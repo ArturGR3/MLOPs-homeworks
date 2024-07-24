@@ -11,21 +11,17 @@ import threading
 
 load_dotenv(find_dotenv(filename=".env", usecwd=True, raise_error_if_not_found=True))
 
-# Prometheus metrics
-REQUEST_TIME = Histogram('request_processing_seconds', 'Time spent processing request')
-REQUEST_COUNTER = Counter('request_count', 'Number of requests received')
-
 # Specify your bucket name and model file path
 AWS_BUCKER_NAME = os.getenv("AWS_BUCKET_NAME")
 experiment_id = os.getenv("EXPERIMENT_ID")
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
+
 # Initialize the S3 client
 s3 = boto3.client("s3")
 
 # Download the folder from s3
-
-s3_model_folder = f"1/{experiment_id}/artifacts/AutoGluon_mlflow_best_quality_deployment/artifacts/AutoGluon_mlflow_best_quality_deployment/"
+s3_model_folder = f"{experiment_id}/artifacts/AutoGluon_mlflow_best_quality_deployment/artifacts/AutoGluon_mlflow_best_quality_deployment/"
 local_model_path = "model_ag_deployment"
 # Ensure the local folder path exists
 os.makedirs(local_model_path, exist_ok=True)
@@ -41,26 +37,41 @@ try:
 except Exception as e:
     raise RuntimeError(f"Failed to load model: {e}")
 
+# Prometheus metrics
+REQUEST_TIME = Histogram('request_processing_seconds', 'Time spent processing request')
+REQUEST_COUNTER = Counter('request_count', 'Number of requests received')
+
+# Create Flask application
 app = Flask("prediction")
 
-
+# Define predict endpoint
 @app.route("/predict", methods=["POST"])
 @REQUEST_TIME.time()
 def predict_endpoint():
     REQUEST_COUNTER.inc()
     start_time = time.time()
     try:
+        # Get the JSON data from the request
         data = request.get_json()
+
+        # Convert the data to a TabularDataset for AutoGluon model
         data_df = TabularDataset([data])
+
+        # Make the prediction using the loaded model
         pred = predictor.predict(data_df)[0]
         result = {"cost": round(float(pred), 2)}
+
+        # Return the prediction result as JSON
         return jsonify(result)
     except Exception as e:
+        # Return error message if an exception occurs
         return jsonify({"error": str(e)}), 400
     finally:
+        # Calculate the inference time
         duration = time.time() - start_time
         REQUEST_TIME.observe(duration)
 
+# Function to start the Prometheus metrics server
 def start_metrics_server():
     start_http_server(8000)
 

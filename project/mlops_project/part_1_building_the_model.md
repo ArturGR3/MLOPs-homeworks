@@ -1,4 +1,4 @@
-# Introduction (Part 1)
+# Introduction (Part 1. from data to model)
 
 Below we will focuse on the initial phase of our project. We begin by acquiring data from a Kaggle competition using the Kaggle API, followed by optimizing data types to reduce memory usage. We then prepare the data for automated feature engineering using the [OpenFE](https://github.com/IIIS-Li-Group/OpenFE) framework. Next, we build a machine learning model with [AutoGluon](https://auto.gluon.ai/stable/index.html) (AutoML) and track experiments using MLflow. We retrieve the model from an S3 bucket with MlflowClient, make predictions on the test set, and submit the results to Kaggle.
 
