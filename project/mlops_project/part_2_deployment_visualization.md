@@ -1,26 +1,31 @@
-```mermaid
-graph TD
-    subgraph "Docker Network"
-        subgraph "Flask App"
-            A["Flask App<br>(Gunicorn)"]
-            B["Ports: 9696, 8000"]
-        end
-        
-        subgraph "Prometheus Server"
-            C["Prometheus Server<br>(Metrics Collection)"]
-            D["Port: 9090"]
-        end
-        
-        subgraph "Grafana"
-            E["Grafana<br>(Metrics Dashboard)"]
-            F["Port: 3000"]
-        end
-        
-        A --> E
-        C --> E
-    end
-``` 
-    
+```
+                                        +--------------------------+
+                                        |      User Requests       |
+                                        +------------+-------------+
+                                                    |
+                                                    v
+                            +------------------------------------------------------+
+                            |                    Docker Network                    |
+                            |                  (Containerization)                  |
+                            |                                                      |
+                            |  +-----------------+   +--------------------------+  |
+                            |  |  Flask App      |   |     Prometheus Server    |  |
+                            |  |  (Gunicorn)     |   |   (Metrics Collection)   |  |
+                            |  | Ports: 9696,8000|   |        Port: 9090        |  |
+                            |  +--------+--------+   +-----------+--------------+  |
+                            |           |                        |                 |
+                            |           |                        |                 |
+                            |           v                        v                 |
+                            |  +--------------------------------------------+      |
+                            |  |                  Grafana                   |      |
+                            |  |             (Metrics Dashboard)            |      |
+                            |  |                Port: 3000                  |      |
+                            |  +--------------------------------------------+      |
+                            +------------------------------------------------------+
+
+```
+
+
 # Introduction (Part 2: Model Deployment as a Web Service)
 
 In this second part of our project, we focus on deploying the machine learning model created earlier as a web service. This deployment will enable real-time predictions and performance monitoring. We'll utilize the following technologies:
