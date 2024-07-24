@@ -209,4 +209,4 @@ To visualize the performance metrics of our deployed model, we create a Grafana 
 
 Here's an example of what our Grafana dashboard might look like:
 
-![png](Grafana_dashboard.png)
+![png](images/Grafana_dashboard.png)

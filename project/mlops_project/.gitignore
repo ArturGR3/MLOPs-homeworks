@@ -23,3 +23,4 @@ feature_engineering/feature_engineering.env
 feature_engineering/data
 web_service
 web_service_mlflow 
+docs
