@@ -618,7 +618,7 @@ display(image)
 
 
     
-![png](MlfLow_summary.png)
+![png](images/MlfLow_summary.png)
     
 
 
