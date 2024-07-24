@@ -1,7 +1,0 @@
-flask
-gunicorn
-pandas
-boto3
-python-dotenv
-mlflow 
-autogluon.tabular[lightgbm, xgboost, catboost]
