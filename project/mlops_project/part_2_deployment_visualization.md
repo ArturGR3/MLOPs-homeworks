@@ -154,7 +154,7 @@ docker run -d --name=grafana --network=monitoring -p 3000:3000 grafana/grafana
 
 ### Start Flask App
 
-Finally, we build and start our Flask application:
+Finally, we build and start our Flask application:  
 
 ```bash 
 docker rm -f flask_app 
@@ -188,6 +188,14 @@ This will send 5 test requests to our service. The output should look something 
 ```
 
 These consistent results indicate that our model is successfully loaded and making predictions.
+
+These steps are automated using [Makefile](web_service_mlflow_visualiztion/Makefile).
+To execute it, run this in terminal:
+
+```bash 
+cd /web_service_mlflow_visualiztion
+make 
+```
 
 ---
 ---
