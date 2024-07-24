@@ -1,6 +1,0 @@
-flask
-gunicorn
-pandas
-mlflow
-python-dotenv
-autogluon.tabular[all]
