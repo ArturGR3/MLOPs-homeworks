@@ -1,3 +1,5 @@
+# Introduction (Part 2: Model Deployment as a Web Service)
+
 ```
                                         +--------------------------+
                                         |      User Requests       |
@@ -24,9 +26,6 @@
                             +------------------------------------------------------+
 
 ```
-
-
-# Introduction (Part 2: Model Deployment as a Web Service)
 
 In this second part of our project, we focus on deploying the machine learning model created earlier as a web service. This deployment will enable real-time predictions and performance monitoring. We'll utilize the following technologies:
 
