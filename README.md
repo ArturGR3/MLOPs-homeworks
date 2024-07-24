@@ -1,1 +1,3 @@
-# MlOPsZoomCamp2024_homeworks
+# MLOps ZoomCamp
+
+This repo is devoted to my journey to MLOps world.
